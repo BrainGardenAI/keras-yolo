@@ -6,12 +6,15 @@ This contains methods to load yolo/yolo2 configs and to convert it to valid kera
 
 import re
 from keras.layers import Input, Dense, Conv2D
-from keras.layers.core import Dropout
+from keras.layers.core import Dropout, Flatten, Lambda
 from keras.layers.pooling import MaxPooling2D
-from keras.models import Model
+from keras.models import Model, Sequential
 from keras.layers.local import LocallyConnected2D
 from keras.layers.advanced_activations import LeakyReLU
 from keras.optimizers import SGD
+import keras.backend as K
+
+from detection import Detection2D
 
 
 def get_activation(activation):
@@ -92,16 +95,42 @@ def get_local(params):
     
 def get_connected(params):
     activation = get_activation(params.get('activation', "linear"))
-    return Dense(
-        params.get('output', 1),
-        activation=activation
-    )
-
+    def _connected(x):
+        y = Flatten()(x)
+        return Dense(params.get('output', 1), activation=activation)(y)
+    
+    return Lambda(_connected)
+    
 def get_dropout(params):
     return Dropout(params.get('probability', 0.5))
 
 def get_detection(params):
-    pass
+    coords = params.get("coords", 1)
+    classes = params.get("classes", 1)
+    rescore = params.get("rescore", 0)
+    num = params.get("num", 1)
+    side = params.get("side", 7)
+    object_scale = params.get("object_scale")
+    noobject_scale = params.get("noobject_scale")
+    class_scale = params.get("class_scale")
+    coord_scale = params.get("coord_scale")
+    #detection_layer layer = make_detection_layer(params.batch, params.inputs, num, side, classes, coords, rescore);
+
+    softmax = params.get("softmax", 0)
+    lsqrt = params.get("sqrt", 0)
+
+    max_boxes = params.get("max", 30)
+    coord_scale = params.get("coord_scale", 1)
+    forced = params.get("forced", 0)
+    object_scale = params.get("object_scale", 1)
+    noobject_scale = params.get("noobject_scale", 1)
+    class_scale = params.get("class_scale", 1)
+    jitter = params.get("jitter", 0.2)
+    random = params.get("random", 0)
+    reorg = params.get("reorg", 0)
+    #TODO: to be implemented
+    return Detection2D(side, num, classes, coords, 
+        object_scale, noobject_scale, class_scale, coord_scale)
 
 
 layer_constructors = {
@@ -110,7 +139,6 @@ layer_constructors = {
     'local': get_local,
     'connected': get_connected,
     'dropout': get_dropout,
-    #'route'
     #'reorg'
     #'region'
     'detection': get_detection
@@ -146,4 +174,5 @@ def buildYoloModel(config_filename):
 
 
 if __name__ == "__main__":
-    buildYoloModel("cfg/yolov1/yolo2.cfg")
+    # cfg/yolov1/yolo2.cfg
+    buildYoloModel("cfg/yolov1/tiny-yolo.cfg")
