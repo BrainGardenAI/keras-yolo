@@ -63,7 +63,7 @@ def read_config(filename):
 
 def get_convolutional(params):
     activation = get_activation(params.get('activation', 'linear'))
-    batch_normalize = params.get('batch_normalize') # TODO: add this param processing
+    batch_normalize = params.get('batch_normalize', 0) # TODO: add this param processing
     padding = "same" if params.get('pad', 0) else "valid"
     return Conv2D(
         filters=params.get('filters', 1),
@@ -158,11 +158,12 @@ def buildYoloModel(config_filename):
     inputs = Input(shape=(h, w, c))
     outputs = inputs
     print(net_params)
-
+    layer_names = [""]
     for class_name, params in config_iterator:
         layer = layer_constructors.get(class_name, lambda x: None)(params)
         if layer:
             outputs = layer(outputs)
+            layer_names.append(class_name)
         else:
             print(class_name, params)
         pass
@@ -170,7 +171,7 @@ def buildYoloModel(config_filename):
     model = Model(inputs=inputs, outputs=outputs)
     #model.compile(optimizer=SGD(lr=lr, momentum=momentum, decay=decay))
     # TODO: check what loss function and optimizer should be used here
-    return model
+    return model, layer_names
 
 
 if __name__ == "__main__":
