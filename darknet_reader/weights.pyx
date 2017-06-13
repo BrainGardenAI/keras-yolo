@@ -22,64 +22,45 @@ cdef get_channels(layer):
         return layer.input_shape[-1]
     return layer.input_shape[0]
     
-    
+
 cdef void read_convolutional_weights(FILE*fp, layer):
     channels = get_channels(layer)
-    #cdef float biases = 0.0
-    #cdef np.ndarray[float, ndim=4, mode='c'] biases = np.zeros(layer.kernel_size + (channels, layer.filters), dtype=np.float)
-    cdef np.ndarray[double, ndim=1, mode='c'] biases = np.zeros((layer.filters,), dtype=np.float)
-    #print(biases.shape)
-    #for i in xrange(layer.filters):
-    #    fread(<void*>&biases[0,0,0,0], sizeof(float), 1, fp)
-    fread(<void*>&biases[0], sizeof(float), layer.filters, fp)
-    print(biases)
+
+    cdef np.ndarray[np.float32_t, ndim=1, mode='c'] biases = np.zeros((layer.filters,), dtype=np.float32)
+    fread(&biases[0], sizeof(np.float32_t), layer.filters, fp)
+    
     cdef int num = layer.filters*channels*layer.kernel_size[0]*layer.kernel_size[0]
     
-    cdef np.ndarray[double, ndim=1, mode='c'] scales = np.zeros((layer.filters,), dtype=np.float)
-    cdef np.ndarray[double, ndim=1, mode='c'] rolling_mean = np.zeros((layer.filters,), dtype=np.float)
-    cdef np.ndarray[double, ndim=1, mode='c'] rolling_variance = np.zeros((layer.filters,), dtype=np.float)
-    #cdef float scales = 0.0
-    #cdef float rolling_mean = 0.0
-    #cdef float rolling_variance = 0.0
-    if 1: #there should be batch_normalizes
-        fread(<void*>&scales[0], sizeof(float), layer.filters, fp)
-        fread(<void*>&rolling_mean[0], sizeof(float), layer.filters, fp)
-        fread(<void*>&rolling_variance[0], sizeof(float), layer.filters, fp)
-        #for i in xrange(layer.filters):
-        #    fread(&scales, sizeof(float), 1, fp)
-        #for i in xrange(layer.filters):
-        #    fread(&rolling_mean, sizeof(float), 1, fp)
-        #for i in xrange(layer.filters):
-        #    fread(&rolling_variance, sizeof(float), 1, fp)
-        #fread(l.scales, sizeof(float), l.n, fp);
-        #fread(l.rolling_mean, sizeof(float), l.n, fp);
-        #fread(l.rolling_variance, sizeof(float), l.n, fp);
-        pass
-    #cdef float weights = 0
-    cdef np.ndarray[double, ndim=4, mode='c'] weights = np.zeros(layer.kernel_size + (channels, layer.filters), dtype=np.float)
-    #for i in xrange(num):
-    #    fread(&weights, sizeof(float), 1, fp);
-    fread(&weights[0,0,0,0], sizeof(float), num, fp)
+    cdef np.ndarray[np.float32_t, ndim=1, mode='c'] scales = np.zeros((layer.filters,), dtype=np.float32)
+    cdef np.ndarray[np.float32_t, ndim=1, mode='c'] rolling_mean = np.zeros((layer.filters,), dtype=np.float32)
+    cdef np.ndarray[np.float32_t, ndim=1, mode='c'] rolling_variance = np.zeros((layer.filters,), dtype=np.float32)
+
+    if 1: #there should be batch_normalize
+        fread(&scales[0], sizeof(np.float32_t), layer.filters, fp)
+        fread(&rolling_mean[0], sizeof(np.float32_t), layer.filters, fp)
+        fread(&rolling_variance[0], sizeof(np.float32_t), layer.filters, fp)
+
+    cdef np.ndarray[np.float32_t, ndim=4, mode='c'] weights = np.zeros(layer.kernel_size + (channels, layer.filters), dtype=np.float32)
+    fread(&weights[0,0,0,0], sizeof(np.float32_t), num, fp)
     layer.set_weights((weights, biases))
-    #print(weights)
     
     
 cdef void read_connected_weights(FILE*fp, layer):
-    print(layer.input_shape)
+    print(layer.input_shape) 
     output_size = layer.output_shape[1]
-    cdef np.ndarray[double, ndim=1, mode='c'] biases = np.zeros((output_size,), dtype=np.float)
-    fread(&biases[0], sizeof(float), output_size, fp)
+    cdef np.ndarray[np.float32_t, ndim=1, mode='c'] biases = np.zeros((output_size,), dtype=np.float32)
+    fread(&biases[0], sizeof(np.float32_t), output_size, fp)
     cdef int num = output_size* layer.input_shape[1]*layer.input_shape[2]*layer.input_shape[3]
     #print(num, tuple(layer.input_shape[1:]) + (output_size,))
-    cdef np.ndarray[double, ndim=4, mode='c'] weights = np.zeros(tuple(layer.input_shape[1:]) + (output_size,), dtype=np.float)
-    fread(&weights[0,0,0,0], sizeof(float), num, fp)
-    cdef np.ndarray[double, ndim=1, mode='c'] scales = np.zeros((output_size,), dtype=np.float)
-    cdef np.ndarray[double, ndim=1, mode='c'] rolling_mean = np.zeros((output_size,), dtype=np.float)
-    cdef np.ndarray[double, ndim=1, mode='c'] rolling_variance = np.zeros((output_size,), dtype=np.float)
+    cdef np.ndarray[np.float32_t, ndim=4, mode='c'] weights = np.zeros(tuple(layer.input_shape[1:]) + (output_size,), dtype=np.float32)
+    fread(&weights[0,0,0,0], sizeof(np.float32_t), num, fp)
+    cdef np.ndarray[np.float32_t, ndim=1, mode='c'] scales = np.zeros((output_size,), dtype=np.float32)
+    cdef np.ndarray[np.float32_t, ndim=1, mode='c'] rolling_mean = np.zeros((output_size,), dtype=np.float32)
+    cdef np.ndarray[np.float32_t, ndim=1, mode='c'] rolling_variance = np.zeros((output_size,), dtype=np.float32)
     if 1:
-        fread(&scales[0], sizeof(float), output_size, fp)
-        fread(&rolling_mean[0], sizeof(float), output_size, fp)
-        fread(&rolling_variance[0], sizeof(float), output_size, fp)
+        fread(&scales[0], sizeof(np.float32_t), output_size, fp)
+        fread(&rolling_mean[0], sizeof(np.float32_t), output_size, fp)
+        fread(&rolling_variance[0], sizeof(np.float32_t), output_size, fp)
     ##layer.set_weights((weights, biases))
     #fread(l.biases, sizeof(float), l.outputs, fp);
     #fread(l.weights, sizeof(float), l.outputs*l.inputs, fp);
