@@ -23,5 +23,6 @@ from the main project directory. This scripts expects to tiny-yolo.weights to be
 
 - keras
 - distutils 
+- cython
 
 For development I use python 2, but this implementation is planned to be run with both python 2 & 3.

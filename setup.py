@@ -1,5 +1,7 @@
 from distutils.core import setup, Extension
 from Cython.Distutils import build_ext
+import numpy 
+
 
 setup(
     name='darknet_weights',
@@ -11,7 +13,7 @@ setup(
             language="c++",
             include_dirs=['./darknet_reader']
     )],
-    include_dirs=['darknet_reader'],
+    include_dirs=['darknet_reader', numpy.get_include()],
     cmdclass={ 'build_ext': build_ext },
     packages=['darknet_weights'],
     package_dir={'darknet_weights':'darknet_reader'},
