@@ -24,8 +24,8 @@ def check_weights_loading(model_file_name, weight_file_name):
         print("darknet weight file %s could not be found" % weight_file_name)
         return
     sys.path.insert(0, os.getcwd())
-    from cfg_reader import buildYoloModel
-    from darknet_reader import *
+    from darknet.network import buildYoloModel
+    from darknet.weights_reader import read_file
     
     model, layer_names = buildYoloModel(model_file_name)
     #print([(x.shape)  for x in model.get_weights()])

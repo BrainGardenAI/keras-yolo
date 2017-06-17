@@ -7,14 +7,14 @@ setup(
     name='darknet_weights',
     ext_modules = [
         Extension(
-            "darknet_reader.weights",
-            sources=["darknet_reader/weights.pyx" #,"darknet_reader/weights_loader.cpp"
+            "darknet.weights_reader.weights",
+            sources=["darknet/weights_reader/weights.pyx" #,"darknet_reader/weights_loader.cpp"
             ],
             language="c++",
-            include_dirs=['./darknet_reader']
+            include_dirs=['./darknet/weights_reader']
     )],
-    include_dirs=['darknet_reader', numpy.get_include()],
+    include_dirs=['darknet/weights_reader', numpy.get_include()],
     cmdclass={ 'build_ext': build_ext },
     packages=['darknet_weights'],
-    package_dir={'darknet_weights':'darknet_reader'},
+    package_dir={'darknet_weights':'darknet/weights_reader'},
 )
