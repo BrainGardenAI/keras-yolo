@@ -1,4 +1,10 @@
-class Connected(Dense):
+from keras.layers import Dense, Layer
+import keras.backend as K
+from keras.engine import InputSpec
+import numpy as np
+
+
+class Connected(Layer):
     """
     Darknet "connected" layer. Main difference vs. keras Dense layer is that 
     input also becomes flatten.
@@ -16,26 +22,25 @@ class Connected(Dense):
     
     - but also has weights.
     """
-    def __init__(self, **kwargs):
+    def __init__(self, units, activation=None, **kwargs):
         super(Connected, self).__init__(**kwargs)
+        self.dense_layer = Dense(units, activation=activation, **kwargs)
+    
     
     def build(self, input_shape):
+        super(Connected, self).build(input_shape) 
         densed_shape = (input_shape[0], np.prod(input_shape[1:]))
-        super(Connected, self).build(densed_shape) 
+        self.dense_layer.build(densed_shape)
         
     
     def call(self, x, training=None):
-        inputs = K.batch_flatten(x)
-        return super(Connected, self).call(inputs)
+        flatten_inputs = K.batch_flatten(x)
+        return self.dense_layer.call(flatten_inputs)
         
         
     def compute_output_shape(self, input_shape):
-        if not all(input_shape[1:]):
-            raise ValueError('The shape of the input to "Connected" '
-                             'is not fully defined '
-                             '(got ' + str(input_shape[1:]) + '. '
-                             'Make sure to pass a complete "input_shape" '
-                             'or "batch_input_shape" argument to the first '
-                             'layer in your model.')
-        return (input_shape[0], np.prod(input_shape[1:]))
+        dense_input_shape = (input_shape[0], np.prod(input_shape[1:]))
+        return self.dense_layer.compute_output_shape(dense_input_shape)
+
+
         

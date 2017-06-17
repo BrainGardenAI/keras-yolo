@@ -15,6 +15,7 @@ from keras.optimizers import SGD
 import keras.backend as K
 
 from detection import Detection2D
+from connected import Connected
 
 
 def get_activation(activation):
@@ -95,11 +96,8 @@ def get_local(params):
     
 def get_connected(params):
     activation = get_activation(params.get('activation', "linear"))
-    def _connected(x):
-        y = Flatten()(x)
-        return Dense(params.get('output', 1), activation=activation)(y)
+    return Connected(params.get('output', 1), activation=activation)
     
-    return Lambda(_connected)
     
 def get_dropout(params):
     return Dropout(params.get('probability', 0.5))
