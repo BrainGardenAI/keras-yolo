@@ -41,6 +41,11 @@ class Connected(Layer):
     def compute_output_shape(self, input_shape):
         dense_input_shape = (input_shape[0], np.prod(input_shape[1:]))
         return self.dense_layer.compute_output_shape(dense_input_shape)
-
+    
+    def set_weights(self, weights):
+        self.dense_layer.set_weights(weights)
+    
+    def get_weights(self):
+        return self.dense_layer.get_weights()
 
         

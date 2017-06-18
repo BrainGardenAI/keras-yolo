@@ -50,10 +50,11 @@ cdef void read_connected_weights(FILE*fp, layer):
     output_size = layer.output_shape[1]
     cdef np.ndarray[np.float32_t, ndim=1, mode='c'] biases = np.zeros((output_size,), dtype=np.float32)
     fread(&biases[0], sizeof(np.float32_t), output_size, fp)
-    cdef int num = output_size* layer.input_shape[1]*layer.input_shape[2]*layer.input_shape[3]
+    cdef int num = output_size * np.prod(layer.input_shape[1:])
     #print(num, tuple(layer.input_shape[1:]) + (output_size,))
-    cdef np.ndarray[np.float32_t, ndim=4, mode='c'] weights = np.zeros(tuple(layer.input_shape[1:]) + (output_size,), dtype=np.float32)
-    fread(&weights[0,0,0,0], sizeof(np.float32_t), num, fp)
+    cdef np.ndarray[np.float32_t, ndim=2, mode='fortran'] weights = np.zeros((np.prod(layer.input_shape[1:]), 
+        output_size), dtype=np.float32, order='F')
+    fread(&weights[0,0], sizeof(np.float32_t), num, fp)
     cdef np.ndarray[np.float32_t, ndim=1, mode='c'] scales = np.zeros((output_size,), dtype=np.float32)
     cdef np.ndarray[np.float32_t, ndim=1, mode='c'] rolling_mean = np.zeros((output_size,), dtype=np.float32)
     cdef np.ndarray[np.float32_t, ndim=1, mode='c'] rolling_variance = np.zeros((output_size,), dtype=np.float32)
@@ -61,7 +62,7 @@ cdef void read_connected_weights(FILE*fp, layer):
         fread(&scales[0], sizeof(np.float32_t), output_size, fp)
         fread(&rolling_mean[0], sizeof(np.float32_t), output_size, fp)
         fread(&rolling_variance[0], sizeof(np.float32_t), output_size, fp)
-    ##layer.set_weights((weights, biases))
+    layer.set_weights((weights, biases))
     #fread(l.biases, sizeof(float), l.outputs, fp);
     #fread(l.weights, sizeof(float), l.outputs*l.inputs, fp);
     #if(transpose){
