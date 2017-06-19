@@ -5,7 +5,7 @@ This contains methods to load yolo/yolo2 configs and to convert it to valid kera
 """
 
 import re
-from keras.layers import Input, Dense, Conv2D
+from keras.layers import Input, Dense, Conv2D, Activation
 from keras.layers.core import Dropout, Flatten, Lambda
 from keras.layers.pooling import MaxPooling2D
 from keras.models import Model, Sequential
@@ -14,9 +14,7 @@ from keras.layers.advanced_activations import LeakyReLU
 from keras.optimizers import SGD
 import keras.backend as K
 
-from detection import Detection2D
-from connected import Connected
-from convolutional import Convolutional
+
 
 from keras.layers.normalization import BatchNormalization
 
@@ -27,7 +25,7 @@ def get_activation(activation):
     """
     if activation == "leaky":
         return LeakyReLU(alpha=0.1)
-    return activation
+    return Activation(activation)
 
 
 def read_config(filename):
@@ -66,6 +64,7 @@ def read_config(filename):
 
 
 def get_convolutional(params):
+    from convolutional import Convolutional
     activation = get_activation(params.get('activation', 'linear'))
     batch_normalize = params.get('batch_normalize', 0) # TODO: add this param processing
     padding = "same" if params.get('pad', 0) else "valid"
@@ -99,6 +98,7 @@ def get_local(params):
     
     
 def get_connected(params):
+    from connected import Connected
     activation = get_activation(params.get('activation', "linear"))
     return Connected(**params)
     
@@ -107,6 +107,7 @@ def get_dropout(params):
     return Dropout(params.get('probability', 0.5))
 
 def get_detection(params):
+    from detection import Detection2D
     coords = params.get("coords", 1)
     classes = params.get("classes", 1)
     rescore = params.get("rescore", 0)

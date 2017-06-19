@@ -4,6 +4,8 @@ import keras.backend as K
 from keras.engine import InputSpec
 import numpy as np
 
+from cfg_reader import get_activation
+
 
 class Connected(Layer):
     """
@@ -25,13 +27,13 @@ class Connected(Layer):
     """
     def __init__(self, output=1, activation=None, batch_normalize=0, **kwargs):
         self.units = output
-        self.activation = activation
         self.batch_normalize = batch_normalize
         super(Connected, self).__init__(**kwargs)
         self.dense_layer = Dense(self.units, **kwargs)
         # TODO: axis check
         if self.batch_normalize:
             self.batchnorm_layer = BatchNormalization(scale=True, center=False)
+        self.activation_layer = get_activation(activation)
     
     
     def build(self, input_shape):
@@ -39,7 +41,9 @@ class Connected(Layer):
         densed_shape = (input_shape[0], np.prod(input_shape[1:]))
         self.dense_layer.build(densed_shape)
         if self.batch_normalize:
-            self.batchnorm_layer.build(self.dense_layer.output_shape(input_shape))
+            densed_shape = self.dense_layer.output_shape(densed_shape)
+            self.batchnorm_layer.build(densed_shape)
+        self.activation_layer.build(densed_shape)
         
     
     def call(self, x, training=None):
@@ -47,14 +51,15 @@ class Connected(Layer):
         output = self.dense_layer.call(flatten_inputs)
         if self.batch_normalize:
             output = self.batchnorm_layer.call(output)
+        output = self.activation_layer.call(output)
         return output
         
         
     def compute_output_shape(self, input_shape):
         dense_input_shape = (input_shape[0], np.prod(input_shape[1:]))
         shape = self.dense_layer.compute_output_shape(dense_input_shape)
-        if self.batch_normalize:
-            shape = self.batch_normalize.compute_output_shape(shape)
+        #if self.batch_normalize:
+        #    shape = self.batch_normalize.compute_output_shape(shape)
         return shape
     
     def set_weights(self, weights):

@@ -1,18 +1,11 @@
-from keras.layers import Layer, Conv2D
+from keras.layers import Layer, Conv2D, Activation
 import keras.backend as K
 from keras.engine import InputSpec
 import numpy as np
 from keras.layers.advanced_activations import LeakyReLU
 from keras.layers.normalization import BatchNormalization
 
-
-def get_activation(activation):
-    """
-    Placeholder to handle different activation types
-    """
-    if activation == "leaky":
-        return LeakyReLU(alpha=0.1)
-    return activation
+from cfg_reader import get_activation
 
 
 class Convolutional(Layer):
@@ -31,7 +24,6 @@ class Convolutional(Layer):
         self.data_format = data_format
         axis = -1 if self.data_format == 'channels_last' else 0
         
-        self.activation = get_activation(params.get('activation', 'linear'))
         self.batch_normalize = batch_normalize
         self.padding = "same" if pad else "valid"
         self.filters = filters
@@ -50,8 +42,7 @@ class Convolutional(Layer):
             strides=self.strides,
             padding=self.padding)
         self.batchnorm_layer = BatchNormalization(axis=axis, center=False, scale=True)
-        #TODO: add activation here
-        #self.activation = get_activation(params.get('activation', 'linear'))
+        self.activation_layer = get_activation(params.get('activation', 'linear'))
         
     
     def build(self, input_shape):
@@ -59,16 +50,20 @@ class Convolutional(Layer):
         self.convolutional_layer.build(input_shape)
         output_shape = self.convolutional_layer.compute_output_shape(input_shape)
         self.batchnorm_layer.build(output_shape)
+        self.activation_layer.build(output_shape)
         
     
     def call(self, x, training=None):
         output = self.convolutional_layer.call(x)
         output = self.batchnorm_layer.call(output)
+        output = self.activation_layer.call(output)
         return output
     
     def compute_output_shape(self, input_shape):
         shape = self.convolutional_layer.compute_output_shape(input_shape)
-        return self.batchnorm_layer.compute_output_shape(shape)
+        return shape
+        #return self.batchnorm_layer.compute_output_shape(shape) 
+        # suppose that the shape doesn't change during activation or batchnorm
         
     def set_weights(self, weights):
         if self.batch_normalize:
