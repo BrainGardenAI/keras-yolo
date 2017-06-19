@@ -25,24 +25,24 @@ cdef get_channels(layer):
 
 cdef void read_convolutional_weights(FILE*fp, layer):
     channels = get_channels(layer)
-
     cdef np.ndarray[np.float32_t, ndim=1, mode='c'] biases = np.zeros((layer.filters,), dtype=np.float32)
     fread(&biases[0], sizeof(np.float32_t), layer.filters, fp)
-    
     cdef int num = layer.filters*channels*layer.kernel_size[0]*layer.kernel_size[0]
-    
     cdef np.ndarray[np.float32_t, ndim=1, mode='c'] scales = np.zeros((layer.filters,), dtype=np.float32)
     cdef np.ndarray[np.float32_t, ndim=1, mode='c'] rolling_mean = np.zeros((layer.filters,), dtype=np.float32)
     cdef np.ndarray[np.float32_t, ndim=1, mode='c'] rolling_variance = np.zeros((layer.filters,), dtype=np.float32)
 
-    if 1: #there should be batch_normalize
+    if layer.batch_normalize: #there should be batch_normalize
         fread(&scales[0], sizeof(np.float32_t), layer.filters, fp)
         fread(&rolling_mean[0], sizeof(np.float32_t), layer.filters, fp)
         fread(&rolling_variance[0], sizeof(np.float32_t), layer.filters, fp)
 
     cdef np.ndarray[np.float32_t, ndim=4, mode='c'] weights = np.zeros(layer.kernel_size + (channels, layer.filters), dtype=np.float32)
     fread(&weights[0,0,0,0], sizeof(np.float32_t), num, fp)
-    layer.set_weights((weights, biases))
+    if layer.batch_normalize:
+        layer.set_weights((weights, biases, scales, rolling_mean, rolling_variance))
+    else:
+        layer.set_weights((weights, biases))
     
     
 cdef void read_connected_weights(FILE*fp, layer):

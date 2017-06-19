@@ -16,6 +16,9 @@ import keras.backend as K
 
 from detection import Detection2D
 from connected import Connected
+from convolutional import Convolutional
+
+from keras.layers.normalization import BatchNormalization
 
 
 def get_activation(activation):
@@ -66,12 +69,13 @@ def get_convolutional(params):
     activation = get_activation(params.get('activation', 'linear'))
     batch_normalize = params.get('batch_normalize', 0) # TODO: add this param processing
     padding = "same" if params.get('pad', 0) else "valid"
-    return Conv2D(
-        filters=params.get('filters', 1),
-        kernel_size=params.get('size', 1),
-        strides=params.get('stride', 1),
-        padding=padding,
-        activation=activation) 
+    return Convolutional(**params)
+    #return Conv2D(
+    #    filters=params.get('filters', 1),
+    #    kernel_size=params.get('size', 1),
+    #    strides=params.get('stride', 1),
+    #    padding=padding,
+    #    activation=activation) 
 
 
 def get_maxpool(params):
@@ -96,7 +100,7 @@ def get_local(params):
     
 def get_connected(params):
     activation = get_activation(params.get('activation', "linear"))
-    return Connected(params.get('output', 1), activation=activation)
+    return Connected(**params)
     
     
 def get_dropout(params):
