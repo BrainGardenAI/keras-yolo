@@ -50,12 +50,12 @@ def resize_image(data, size):
     for c in xrange(channels):
         arr = np.asarray([[ min(i*scale_w, w - 1) for i in xrange(target_w)]])
         for j in xrange(h):
-            part[:, j, c] = scipy.ndimage.map_coordinates(data[:, j, c], arr)
+            part[:, j, c] = scipy.ndimage.map_coordinates(data[:, j, c], arr, order=1)
     resized = np.zeros((target_w, target_h, channels))
     for c in xrange(channels):
         arr = np.asarray([[min(j*scale_h, h - 1) for j in xrange(target_h)]])
         for i in xrange(target_w):
-            resized[i, :, c] = scipy.ndimage.map_coordinates(part[i, :, c], arr)
+            resized[i, :, c] = scipy.ndimage.map_coordinates(part[i, :, c], arr, order=1)
     return resized
     
     
@@ -93,6 +93,7 @@ def load_img(img_path, target_size):
     """
     loads the image the same way darknet does, processes it and returns it (as array).
     uses PIL, like keras.preprocessing.image module.
+    This loads image in RGB format.
     """
     from PIL import Image as pil_image
     import keras.backend as K
@@ -101,6 +102,7 @@ def load_img(img_path, target_size):
     # TODO: check format and convert to RGB
     #resize
     x = np.asarray(img, dtype=K.floatx())/255.0
+    #print(x[0,0,0], x[1,0,0], x[0,1,0], x[1,1,0], img.mode)
     x = letterbox_image(x, target_size)
     return x
     
@@ -110,9 +112,9 @@ def predict_image(model, img_path):
     import numpy as np
     x = load_img(img_path, model.input_shape[1:-1])
     x = np.expand_dims(x, axis=0)
-    print(x, x.shape)
+    #print(x[0,0,0,0], x[0,1,0,0],x[0,0,1,0], x[0,1,1,0], x.shape)
     features = model.predict(x)
-    print(features, features.shape)
+    #print(features, features.shape)
     pass
     
     
@@ -121,7 +123,7 @@ if __name__ == "__main__":
     if resultcode:
         print("Rebuild failed, exiting")
         exit(1)
-    model = check_weights_loading("../darknet/cfg/tiny.cfg", "data/tiny-yolo.weights")
+    model = check_weights_loading("../darknet/cfg/tiny_first.cfg", "data/tiny-yolo.weights")
     import sys
     if len(sys.argv) < 2:
         exit(0)

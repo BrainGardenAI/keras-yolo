@@ -37,10 +37,9 @@ class Detection2D(Layer):
     def compute_output_shape(self, input_shape):
         print(input_shape)
         if self.data_format == 'channels_first':
-            return (None, self.side, self.side, 
-                (1 + self.coords)*self.n + self.classes)
-        return (self.side, self.side, 
-            (1 + self.coords)*self.n + self.classes, None)
+            return (None, (1 + self.coords)*self.n + self.classes, self.side, self.side)
+        return (None, self.side, self.side, 
+            (1 + self.coords)*self.n + self.classes)
     
     def get_config(self):
         config = {'side': self.side,

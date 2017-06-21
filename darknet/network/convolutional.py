@@ -22,7 +22,7 @@ class Convolutional(Layer):
             raise ValueError('data_format must be in '
                              '{"channels_last", "channels_first"}')
         self.data_format = data_format
-        axis = -1 if self.data_format == 'channels_last' else 0
+        axis = -1 if self.data_format == 'channels_last' else 1
         
         self.batch_normalize = batch_normalize
         self.padding = "same" if pad else "valid"

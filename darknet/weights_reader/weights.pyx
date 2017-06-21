@@ -20,7 +20,7 @@ cdef void read_header(FILE* fp):
 cdef get_channels(layer):
     if layer.data_format == 'channels_last':
         return layer.input_shape[-1]
-    return layer.input_shape[0]
+    return layer.input_shape[1]
     
 
 cdef void read_convolutional_weights(FILE*fp, layer):
@@ -37,12 +37,25 @@ cdef void read_convolutional_weights(FILE*fp, layer):
         fread(&rolling_mean[0], sizeof(np.float32_t), layer.filters, fp)
         fread(&rolling_variance[0], sizeof(np.float32_t), layer.filters, fp)
 
-    cdef np.ndarray[np.float32_t, ndim=4, mode='c'] weights = np.zeros(layer.kernel_size + (channels, layer.filters), dtype=np.float32)
+    cdef np.ndarray[np.float32_t, ndim=4, mode='fortran'] weights = np.zeros(
+         layer.kernel_size + (channels, layer.filters,), dtype=np.float32, order='F')
+    cdef np.ndarray[np.float32_t, ndim=2, mode='c'] weights_part = np.zeros(
+        layer.kernel_size, dtype=np.float32)
+    #for i in xrange(layer.filters):
+    #    for j in xrange(channels):
+    #        fread(&weights_part[0, 0], sizeof(np.float32_t), np.prod(layer.kernel_size), fp)
+    #        for h in xrange(layer.kernel_size[0]):
+    #            for w in xrange(layer.kernel_size[1]):
+    #                weights[h, w, j, i] = weights_part[h, w]
+    #for i in xrange(layer.filters):
+    #    fread(&weights.data[i*num/layer.filters*sizeof(np.float32_t)], 
+    #        sizeof(np.float32_t), np.prod(layer.kernel_size)*channels, fp)
     fread(&weights[0,0,0,0], sizeof(np.float32_t), num, fp)
+    
     if layer.batch_normalize:
-        layer.set_weights((weights, biases, scales, rolling_mean, rolling_variance))
+        layer.set_weights((np.swapaxes(weights, 0, 1), biases, scales, rolling_mean, rolling_variance))
     else:
-        layer.set_weights((weights, biases))
+        layer.set_weights((np.swapaxes(weights, 0, 1), biases))
     
     
 cdef void read_connected_weights(FILE*fp, layer):
@@ -90,7 +103,6 @@ cdef void read_local_weights(FILE * fp, l):
   
   
 cpdef void read_file(filename, model, layer_names):
-    print(1)
     cdef FILE* ptr = fopen(filename, "rb")
     read_header(ptr)
     for layer_type, layer in zip(layer_names, model.layers):
@@ -111,4 +123,3 @@ cpdef void read_file(filename, model, layer_names):
     pos = ftell(ptr)
     fseek(ptr, 0, SEEK_END)
     assert(ftell(ptr) == pos, "File wasn't processed completely")
-    pass
