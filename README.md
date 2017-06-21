@@ -19,6 +19,12 @@ python scripts/rebuild_and_load_weights.py
 
 from the main project directory. This scripts expects to tiny-yolo.weights to be located at data folder, it also uses corresponding network config to create it and to load weights. But before that it builds necessary cython library with `distutils`. 
 
+If you run 
+```
+python scripts/rebuild_and_load_weights.py ../darknet/dog.jpg
+```
+it tries to load image from given path and to predict its class (this is in progress).
+
 ## Requirements
 
 - keras
