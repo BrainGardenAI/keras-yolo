@@ -55,7 +55,7 @@ class Convolutional(Layer):
                 kernel_size=self.kernel_size,
                 strides=self.strides,
                 padding=self.padding)
-        self.activation_layer = get_activation(params.get('activation', 'linear'))
+        self.activation = get_activation(activation)
         
     
     def build(self, input_shape):
@@ -66,7 +66,7 @@ class Convolutional(Layer):
         if self.batch_normalize:
             self.batchnorm_layer.build(output_shape)
             
-        self.activation_layer.build(output_shape)
+        #self.activation_layer.build(output_shape)
         
     
     def call(self, x, training=None):
@@ -74,8 +74,7 @@ class Convolutional(Layer):
         
         if self.batch_normalize:
             output = self.batchnorm_layer.call(output)
-            
-        output = self.activation_layer.call(output)
+        output = self.activation(output)
         return output
     
     def compute_output_shape(self, input_shape):

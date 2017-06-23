@@ -114,7 +114,7 @@ def predict_image(model, img_path):
     x = np.expand_dims(x, axis=0)
     #print(x[0,0,0,0], x[0,1,0,0],x[0,0,1,0], x[0,1,1,0], x.shape)
     features = model.predict(x)
-    #print(features, features.shape)
+    print(features[0,0,0,0], features[0,1,0,0], features[0,0,1,0], features[0,0,0,1], features.shape)
     pass
     
     
@@ -123,9 +123,11 @@ if __name__ == "__main__":
     if resultcode:
         print("Rebuild failed, exiting")
         exit(1)
-    model = check_weights_loading("../darknet/cfg/tiny_first.cfg", "data/tiny-yolo.weights")
+    import keras.backend as K
+    K.set_learning_phase(0)
+    model = check_weights_loading("../darknet/cfg/tiny-yolo.cfg", "data/tiny-yolo.weights")
     import sys
     if len(sys.argv) < 2:
         exit(0)
     predict_image(model, sys.argv[1])
-    
+    #print(features[0,0,0])

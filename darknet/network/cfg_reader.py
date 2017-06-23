@@ -65,6 +65,7 @@ def read_config(filename):
 
 def get_convolutional(params):
     from convolutional import Convolutional
+    print(params)
     activation = get_activation(params.get('activation', 'linear'))
     batch_normalize = params.get('batch_normalize', 0) # TODO: add this param processing
     padding = "same" if params.get('pad', 0) else "valid"
