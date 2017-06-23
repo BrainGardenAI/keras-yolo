@@ -14,7 +14,7 @@ cdef void read_header(FILE* fp):
     fread(&revision, sizeof(int), 1, fp)
     fread(&seen, sizeof(int), 1, fp)
     cdef int transpose = (major > 1000) or (minor > 1000);
-    print(major, minor, revision, seen, transpose)
+    #print(major, minor, revision, seen, transpose)
 
 
 cdef get_channels(layer):
@@ -105,20 +105,21 @@ cpdef void read_file(filename, model, layer_names):
     cdef FILE* ptr = fopen(filename, "rb")
     read_header(ptr)
     for layer_type, layer in zip(layer_names, model.layers):
-          print(layer_type)
-          print [ x.shape for x in layer.get_weights()]
-          print("processing %s"%layer_type)
+          #print(layer_type)
+          #print [ x.shape for x in layer.get_weights()]
+          #print("processing %s"%layer_type)
           if layer_type == "convolutional":
-              print("processing convolutional layer %s\n"% layer.name)
+              #print("processing convolutional layer %s\n"% layer.name)
               read_convolutional_weights(ptr, layer)
           if layer_type == "connected":
-              print("processing connected layer %s\n" %layer.name)
+              #print("processing connected layer %s\n" %layer.name)
               read_connected_weights(ptr, layer)
               #return
           if layer_type == "local":
-              print("processing local layer %s\n" % layer.name)
+              #print("processing local layer %s\n" % layer.name)
               #read_local_weights(ptr, layer)
               #return
+              pass
     pos = ftell(ptr)
     fseek(ptr, 0, SEEK_END)
     assert(ftell(ptr) == pos, "File wasn't processed completely")

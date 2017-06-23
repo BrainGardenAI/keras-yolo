@@ -65,7 +65,6 @@ def read_config(filename):
 
 def get_convolutional(params):
     from convolutional import Convolutional
-    print(params)
     activation = get_activation(params.get('activation', 'linear'))
     batch_normalize = params.get('batch_normalize', 0) # TODO: add this param processing
     padding = "same" if params.get('pad', 0) else "valid"
@@ -81,7 +80,8 @@ def get_convolutional(params):
 def get_maxpool(params):
     return MaxPooling2D(
         strides=params.get('stride', 1), 
-        pool_size=params.get('size', 1))
+        pool_size=params.get('size', 1), 
+        padding="same")
 
 
 def get_local(params):
@@ -167,6 +167,10 @@ def buildYoloModel(config_filename):
         layer = layer_constructors.get(class_name, lambda x: None)(params)
         if layer:
             outputs = layer(outputs)
+            print("%15s : %s -> %s" % (
+                class_name, 
+                " x ".join(map(lambda x:"%4s"%x, layer.input_shape[1:])),
+                " x ".join(map(lambda x:"%4s"%x, layer.output_shape[1:]))))
             layer_names.append(class_name)
         else:
             print(class_name, params)

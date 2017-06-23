@@ -28,10 +28,10 @@ def check_weights_loading(model_file_name, weight_file_name):
     from darknet.network import buildYoloModel
     model, layer_names = buildYoloModel(model_file_name)
     #print([(x.shape)  for x in model.get_weights()])
-    for layer_type, layer in zip(layer_names, model.layers):
-        print(layer_type, layer.name)
-        print [ x.shape for x in layer.get_weights()]
-        print(layer.output_shape)
+    #for layer_type, layer in zip(layer_names, model.layers):
+    #    print(layer_type, layer.name)
+    #    print [ x.shape for x in layer.get_weights()]
+    #    print(layer.output_shape)
     print("-----\nstart actual reading\n-----\n")
     read_file(weight_file_name, model, layer_names)
     return model
@@ -72,7 +72,7 @@ def letterbox_image(img_data, size):
     (w, h, c) = img_data.shape
     if 1.0*target_w/w < 1.0*target_h/h:
         new_w = target_w
-        new_h = (h*target_w)/h
+        new_h = (h*target_w)/w
     else:
         new_h = target_h
         new_w = (w*target_h)/h
@@ -125,7 +125,7 @@ if __name__ == "__main__":
         exit(1)
     import keras.backend as K
     K.set_learning_phase(0)
-    model = check_weights_loading("../darknet/cfg/tiny-yolo.cfg", "data/tiny-yolo.weights")
+    model = check_weights_loading("../darknet/cfg/tiny_first.cfg", "data/tiny-yolo.weights")
     import sys
     if len(sys.argv) < 2:
         exit(0)
