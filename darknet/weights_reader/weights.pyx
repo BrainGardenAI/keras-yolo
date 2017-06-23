@@ -39,8 +39,6 @@ cdef void read_convolutional_weights(FILE*fp, layer):
 
     cdef np.ndarray[np.float32_t, ndim=4, mode='fortran'] weights = np.zeros(
          layer.kernel_size + (channels, layer.filters,), dtype=np.float32, order='F')
-    cdef np.ndarray[np.float32_t, ndim=2, mode='c'] weights_part = np.zeros(
-        layer.kernel_size, dtype=np.float32)
     #for i in xrange(layer.filters):
     #    for j in xrange(channels):
     #        fread(&weights_part[0, 0], sizeof(np.float32_t), np.prod(layer.kernel_size), fp)
@@ -53,7 +51,7 @@ cdef void read_convolutional_weights(FILE*fp, layer):
     fread(&weights[0,0,0,0], sizeof(np.float32_t), num, fp)
     
     if layer.batch_normalize:
-        layer.set_weights((np.swapaxes(weights, 0, 1), biases, scales, rolling_mean, rolling_variance))
+        layer.set_weights((np.swapaxes(weights, 0, 1), scales, biases, rolling_mean, rolling_variance))
     else:
         layer.set_weights((np.swapaxes(weights, 0, 1), biases))
     
@@ -76,6 +74,7 @@ cdef void read_connected_weights(FILE*fp, layer):
         fread(&rolling_mean[0], sizeof(np.float32_t), output_size, fp)
         fread(&rolling_variance[0], sizeof(np.float32_t), output_size, fp)
     layer.set_weights((weights, biases))
+    
     #fread(l.biases, sizeof(float), l.outputs, fp);
     #fread(l.weights, sizeof(float), l.outputs*l.inputs, fp);
     #if(transpose){

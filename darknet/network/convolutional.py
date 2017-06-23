@@ -36,12 +36,25 @@ class Convolutional(Layer):
         #    #strides=params.get('stride', 1),
         #    #padding=padding,
         #    activation=activation) 
-        self.convolutional_layer = Conv2D(
-            filters=self.filters,
-            kernel_size=self.kernel_size,
-            strides=self.strides,
-            padding=self.padding)
-        self.batchnorm_layer = BatchNormalization(axis=axis, center=False, scale=True)
+        
+        if self.batch_normalize: #don't use biases in conv layer, use them in batchnorm
+            self.convolutional_layer = Conv2D(
+                filters=self.filters,
+                kernel_size=self.kernel_size,
+                strides=self.strides,
+                padding=self.padding, 
+                use_bias=False)
+            self.batchnorm_layer = BatchNormalization(
+                axis=axis, 
+                center=True, 
+                scale=True, 
+                epsilon=0.000001)
+        else: #use biases in conv layer
+            self.convolutional_layer = Conv2D(
+                filters=self.filters,
+                kernel_size=self.kernel_size,
+                strides=self.strides,
+                padding=self.padding)
         self.activation_layer = get_activation(params.get('activation', 'linear'))
         
     
@@ -49,13 +62,19 @@ class Convolutional(Layer):
         super(Convolutional, self).build(input_shape) 
         self.convolutional_layer.build(input_shape)
         output_shape = self.convolutional_layer.compute_output_shape(input_shape)
-        self.batchnorm_layer.build(output_shape)
+        
+        if self.batch_normalize:
+            self.batchnorm_layer.build(output_shape)
+            
         self.activation_layer.build(output_shape)
         
     
     def call(self, x, training=None):
         output = self.convolutional_layer.call(x)
-        output = self.batchnorm_layer.call(output)
+        
+        if self.batch_normalize:
+            output = self.batchnorm_layer.call(output)
+            
         output = self.activation_layer.call(output)
         return output
     
@@ -65,13 +84,13 @@ class Convolutional(Layer):
         #return self.batchnorm_layer.compute_output_shape(shape) 
         # suppose that the shape doesn't change during activation or batchnorm
         
-    def set_weights(self, weights):
+    def set_weights(self, weights_data):
         if self.batch_normalize:
-            (weights, biases, scales, rolling_mean, rolling_variance) = weights
-            self.convolutional_layer.set_weights((weights, biases))
-            self.batchnorm_layer.set_weights((scales, rolling_mean, rolling_variance))
+            (weights, scales, biases, rolling_mean, rolling_variance) = weights_data
+            self.convolutional_layer.set_weights((weights,))
+            self.batchnorm_layer.set_weights((scales, biases, rolling_mean, rolling_variance))
         else:
-            self.convolutional_layer.set_weights(weights)
+            self.convolutional_layer.set_weights(weights_data)
         
     def get_weights(self):
         if self.batch_normalize:
