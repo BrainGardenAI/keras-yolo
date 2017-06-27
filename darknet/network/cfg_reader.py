@@ -25,6 +25,8 @@ def get_activation(activation):
     """
     if activation == "leaky":
         return LeakyReLU(alpha=0.1)
+    if activation == "logistic":
+        return Activation(lambda x: 1.0/(1.0 + exp(-x)))
     return Activation(activation)
 
 
@@ -137,6 +139,10 @@ def get_detection(params):
         object_scale, noobject_scale, class_scale, coord_scale)
 
 
+def get_region(params):
+    from region import Region
+    return Region(**params)
+    
 layer_constructors = {
     'convolutional': get_convolutional,
     'maxpool': get_maxpool,
@@ -145,7 +151,8 @@ layer_constructors = {
     'dropout': get_dropout,
     #'reorg'
     #'region'
-    'detection': get_detection
+    'detection': get_detection,
+    'region': get_region
 }
 
 
