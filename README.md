@@ -1,15 +1,15 @@
 # keras-yolo
-Keras implementation of YOLO
+Keras implementation of [YOLO - real-time object detection system](https://pjreddie.com/darknet/yolo/).
 
 ## Current progress and usage
 For now this package's functionality implementation is in progress. 
 
 Current plan:
 
-- [ ] add weights loading from darknet config (in progress)
-- [ ] add script to compare run results vs darknet
+- [x] add weights loading from darknet config (in progress)
+- [?] add script to compare run results vs darknet (currently I compare results with darknet manually).
 
-Weights loading is more complex than it looks: there are several differences between keras and darknet, which should be carefully examined. For example, darknet allows batch normalization to be incorporated to layer, keras layers have no such an option.
+Weights loading is more complex than it looks: there are several differences between keras and darknet, which should be carefully examined. For example, darknet allows batch normalization to be incorporated to layer, keras layers have no such an option and provides distinct `BatchNormalization` class instead.
 
 To check currently implemented, run
 
