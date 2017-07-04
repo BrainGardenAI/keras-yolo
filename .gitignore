@@ -87,3 +87,11 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+
+#
+# Project-specific
+#
+# 1. Cython's generated code
+*/box_operations.{c,cpp}
+*/weights.{c,cpp}

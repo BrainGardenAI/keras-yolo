@@ -1,5 +1,5 @@
 """
-There are two versions of detection layer in darknet, one of them is named region.
+There are two versions of detection layer in darknet, one of them is named `region`.
 This module contains this layer implemented.
 """
 
@@ -40,7 +40,7 @@ class Region(Layer):
     
     
     def call(self, x, training=None):
-        (w, h, channels) = x.shape[1:]
+        (w, h, channels) = x.get_shape()[1:]
         return x
     
     def compute_output_shape(self, input_shape):

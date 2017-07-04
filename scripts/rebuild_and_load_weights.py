@@ -136,9 +136,9 @@ def draw_label(img, left, top, right, bottom, r, g, b, label):
 
 
 def draw_detections(img, num, thresh, boxes, probs, names, alphabet, classes=80, w=13, h=13,n=5):
-    for i in xrange(w):
+    for k in xrange(n):
         for j in xrange(h):
-            for k in xrange(n):
+            for i in xrange(w):
                 class0 = max_index(probs[i, j, k, :], classes)
                 prob = probs[i, j, k, class0]
                 if prob <= thresh:
@@ -146,7 +146,7 @@ def draw_detections(img, num, thresh, boxes, probs, names, alphabet, classes=80,
                 # prob > thresh
                 #width = h*0.012
                 #printf("%s: %.0f%%\n", names[class0], prob*100);
-                print("%s: %5i %%" % (names[class0], int(prob*100)))
+                print("%s: %5i%%" % (names[class0], int(prob*100)))
                 offset = class0*123457 % classes
                 color = ((256*(class0+1)/(classes+1))+ (class0+1)/(classes+1))*256+(class0+1)/(classes+1)+offset
                 red = color/256/256
@@ -318,16 +318,20 @@ def set_region_boxes(features, w, h, thresh, probs, boxes, oo, maps, hier_thresh
                 boxes[col, row, n]["w"] *= w 
                 boxes[col, row, n]["h"] *= h
                 class_index = entry_index(n, 5) # + i
+                m=0.0
                 for j in xrange(classes):
                     class_index = entry_index(n, 5 + j) # + i
                     prob = scale*features[0, col, row, class_index]
                     probs[col, row, n, j] = prob if prob > thresh else 0.0
+                    if prob > m: m = prob
                 #for(j = 0; j < l.classes; ++j){
                 #    int class_index = entry_index(l, 0, n*l.w*l.h + i, 5 + j);
                 #    float prob = scale*predictions[class_index];
                 #    probs[index][j] = (prob > thresh) ? prob : 0;
                 #}
-            pass
+                probs[col, row, n, classes] = m
+                if oo:
+                    probs[col, row, n, 0] = scale
     pass
 #after get_region_box:  
 #if(1){
@@ -350,9 +354,13 @@ def predict_image(model, img_path, n=5):
     import PIL
     #print(model.input_shape[1: -1])
     import numpy as np
-    (w, h) = model.input_shape[1:-1]
-    x = load_img(img_path, (w, h))
+    (im_w, im_h) = model.input_shape[1:-1]
+    
+    (w, h) = model.output_shape[1:-1]
+    
+    x = load_img(img_path, (im_w, im_h))
     img = PIL.Image.fromarray(np.uint8(x*255))
+    #x=np.swapaxes(x, 0, 1)
     x = np.expand_dims(x, axis=0)
     #print(x[0,0,0,0], x[0,1,0,0],x[0,0,1,0], x[0,1,1,0], x.shape)
     features = model.predict(x)
@@ -361,18 +369,24 @@ def predict_image(model, img_path, n=5):
     boxes = np.zeros((w, h, n,), dtype=boxtype)
     probs = np.zeros((w, h, n, classes+1), dtype=np.float32)
     biases = np.zeros((2*n,), dtype=np.float32)
+    biases[:] = 0.5
     names = np.asarray(list(read_names("data/coco.names")))
-    for x in xrange(2*n):
-        biases[x] = 0.5
+    for i, x in enumerate([0.738768,0.874946,  2.42204,2.65704,  4.30971,7.04493,  10.246,4.59428,  12.6868,11.8741]):
+        biases[i] = x
     thresh=0.24
-    hier_thresh=0
+    hier_thresh=0.5
     num=5
     print(features[0,0,0,0], features[0,1,0,0], features[0,0,1,0], features[0,0,0,1], features.shape)
     
-    set_region_boxes(features, 1, 1, thresh, probs, boxes, 0, 0, hier_thresh, biases)
-    print("region box0:", boxes[0, 0, 0])
-    draw_detections(img, num, thresh, boxes, probs, names, None, classes)
+    set_region_boxes(features, 1, 1, thresh, probs, boxes, 0, 0, hier_thresh, 
+            biases, layer_w=w, layer_h=h)
+    nms=0.4
+    from darknet.network import do_nms_sort
+    if nms:
+        do_nms_sort(boxes, probs, w*h*n, classes,  nms, w, h)
+    draw_detections(img, num, thresh, boxes, probs, names, None, classes, w=w, h=w, n=num)
     img.save("predicted.jpg")
+    print("images saved")
     
     
 if __name__ == "__main__":
