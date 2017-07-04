@@ -93,5 +93,7 @@ ENV/
 # Project-specific
 #
 # 1. Cython's generated code
-*/box_operations.{c,cpp}
-*/weights.{c,cpp}
+**/box_operations.c
+**/box_operations.cpp
+**/weights.c
+**/weights.cpp
