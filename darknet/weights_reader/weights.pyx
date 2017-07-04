@@ -101,10 +101,10 @@ cdef void read_local_weights(FILE * fp, l):
     pass
   
   
-cpdef void read_file(filename, model, layer_names):
+cpdef void read_file(filename, model, layer_data):
     cdef FILE* ptr = fopen(filename, "rb")
     read_header(ptr)
-    for layer_type, layer in zip(layer_names, model.layers):
+    for (layer_type, layer_params), layer in zip(layer_data, model.layers):
           #print(layer_type)
           #print [ x.shape for x in layer.get_weights()]
           #print("processing %s"%layer_type)

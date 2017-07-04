@@ -19,24 +19,21 @@ def rebuild_source():
 
 def check_weights_loading(model_file_name, weight_file_name):
     import os, sys
-    #if not os.path.exists(model_file_name):
-    #    print("darknet model config file %s not found" % model_file)
-    #    return
+    sys.path.insert(0, os.getcwd())
+    if not os.path.exists(model_file_name):
+        print("darknet model config file %s not found" % model_file)
+        return
     if not os.path.exists(weight_file_name):
         print("darknet weight file %s could not be found" % weight_file_name)
         return
-    sys.path.insert(0, os.getcwd())
+    
     from darknet.weights_reader import read_file
     from darknet.network import buildYoloModel
-    model, layer_names = buildYoloModel(model_file_name)
-    #print([(x.shape)  for x in model.get_weights()])
-    #for layer_type, layer in zip(layer_names, model.layers):
-    #    print(layer_type, layer.name)
-    #    print [ x.shape for x in layer.get_weights()]
-    #    print(layer.output_shape)
+    model, layer_data = buildYoloModel(model_file_name)
     print("-----\nstart actual reading\n-----\n")
-    read_file(weight_file_name, model, layer_names)
-    return model
+    read_file(weight_file_name, model, layer_data)
+    return model, layer_data
+
 
 def resize_image(data, size):
     """
@@ -135,7 +132,7 @@ def draw_label(img, left, top, right, bottom, r, g, b, label):
     draw.text((left, max(top-h, 0)), label, fill=(255,255,255))
 
 
-def draw_detections(img, num, thresh, boxes, probs, names, alphabet, classes=80, w=13, h=13,n=5):
+def draw_detections(img, thresh, boxes, probs, names, alphabet, classes, w=13, h=13, n=5):
     for k in xrange(n):
         for j in xrange(h):
             for i in xrange(w):
@@ -166,76 +163,16 @@ def draw_detections(img, num, thresh, boxes, probs, names, alphabet, classes=80,
                 bottom = min(bottom, img.height - 1)
                 draw_box_width(img, left, top, right, bottom, red, green, blue)
                 draw_label(img, left, top, right, bottom, red, green, blue, names[class0])
-                #print(left, right, b["x"], b["w"], b["x"] - b["w"]/2.0, b["x"] + b["w"]/2.0,"-<MM")
-                #            if(left < 0) left = 0;
-                #            if(right > im.w-1) right = im.w-1;
-                #            if(top < 0) top = 0;
-                #            if(bot > im.h-1) bot = im.h-1;
-                #
-                #            draw_box_width(im, left, top, right, bot, width, red, green, blue);
-                #            if (alphabet) {
-                #                image label = get_label(alphabet, names[class], (im.h*.03)/10);
-                #                draw_label(im, top + width, left, label, rgb);
-                #            }
-                
     pass
-#void draw_detections(image im, int num, float thresh, box *boxes, float **probs, char **names, image **alphabet, int classes)
-#{
-#    int i;
-#
-#    for(i = 0; i < num; ++i){
-#        int class = max_index(probs[i], classes);
-#        float prob = probs[i][class];
-#        if(prob > thresh){
-#
-#            int width = im.h * .012;
-#
-#            if(0){
-#                width = pow(prob, 1./2.)*10+1;
-#                alphabet = 0;
-#            }
-#
-#            printf("%s: %.0f%%\n", names[class], prob*100);
-#            int offset = class*123457 % classes;
-#            float red = get_color(2,offset,classes);
-#            float green = get_color(1,offset,classes);
-#            float blue = get_color(0,offset,classes);
-#            float rgb[3];
-#
-#            //width = prob*20+2;
-#
-#            rgb[0] = red;
-#            rgb[1] = green;
-#            rgb[2] = blue;
-#            box b = boxes[i];
-#
-#            int left  = (b.x-b.w/2.)*im.w;
-#            int right = (b.x+b.w/2.)*im.w;
-#            int top   = (b.y-b.h/2.)*im.h;
-#            int bot   = (b.y+b.h/2.)*im.h;
-#
-#            if(left < 0) left = 0;
-#            if(right > im.w-1) right = im.w-1;
-#            if(top < 0) top = 0;
-#            if(bot > im.h-1) bot = im.h-1;
-#
-#            draw_box_width(im, left, top, right, bot, width, red, green, blue);
-#            if (alphabet) {
-#                image label = get_label(alphabet, names[class], (im.h*.03)/10);
-#                draw_label(im, top + width, left, label, rgb);
-#            }
-#        }
-#    }
-#}
 
 
-def entry_index(n, entry, coords=4, classes=80):
+def entry_index(n, entry, coords, classes):
     #simplified version - gets last coordinate in input tensor
-    return n*(coords+classes+1) + entry
+    return n*(coords + classes + 1) + entry
     
-def prepare_data(data, n=5, background=0, coords=4, classes=80):
 
-        
+def prepare_data(data, coords, background, classes, n):
+
     def softmax(data, temp=1):
         import numpy as np
         largest = np.max(data)
@@ -248,11 +185,11 @@ def prepare_data(data, n=5, background=0, coords=4, classes=80):
     (batches, w, h, channels) = data.shape
     for b in xrange(batches):
         for i in xrange(n):
-            index = entry_index(i, 0)
+            index = entry_index(i, 0, coords, classes)
             data[b, :, :, index] = logistic_activate(data[b, :, :, index])
-            index = entry_index(i, 1)
+            index = entry_index(i, 1, coords, classes)
             data[b, :, :, index] = logistic_activate(data[b, :, :, index])
-            index = entry_index(i, 4)
+            index = entry_index(i, 4, coords, classes)
             if not background:
                 data[b, :, :, index] = logistic_activate(data[b, :, :, index])
     
@@ -261,7 +198,7 @@ def prepare_data(data, n=5, background=0, coords=4, classes=80):
     #    for g in xrange(w*h):
     #        #softmax(input + b*(inputs/n)+ g*1, classes, 1, w*h)
     for b in xrange(batches):
-        index = entry_index(0, 5)
+        index = entry_index(0, 5, coords, classes)
         for k in xrange(n):
             for i in xrange(w):
                 for j in xrange(h):
@@ -271,36 +208,27 @@ def prepare_data(data, n=5, background=0, coords=4, classes=80):
     #softmax_cpu(net.input + index, l.classes + l.background, l.batch*l.n, l.inputs/l.n, l.w*l.h, 1, l.w*l.h, 1, l.output + index);
     return data
 
-def get_region_box(features, biases, n, index, i, j, w, h, stride, boxes):
+
+def get_region_box(features, biases, n, index, i, j, w, h, boxes):
     boxes[i, j, n]["x"] = (i + features[0, i, j, index])/w
-    boxes[i, j, n]["y"] = (j + features[0, i, j, index+1])/h
-    boxes[i, j, n]["w"] = np.exp(features[0, i, j, index+2])*biases[2*n]/w
-    boxes[i, j, n]["h"] = np.exp(features[0, i, j, index+3])*biases[2*n+1]/h
-#box get_region_box(float *x, float *biases, int n, int index, int i, int j, 
-#int w, int h, int stride)
-#{
-#    box b;
-#    b.x = (i + x[index + 0*stride]) / w;
-#    b.y = (j + x[index + 1*stride]) / h;
-#    b.w = exp(x[index + 2*stride]) * biases[2*n]   / w;
-#    b.h = exp(x[index + 3*stride]) * biases[2*n+1] / h;
-#    return b;
-#}
+    boxes[i, j, n]["y"] = (j + features[0, i, j, index + 1])/h
+    boxes[i, j, n]["w"] = np.exp(features[0, i, j, index + 2])*biases[2*n]/w
+    boxes[i, j, n]["h"] = np.exp(features[0, i, j, index + 3])*biases[2*n + 1]/h
+
 
 def set_region_boxes(features, w, h, thresh, probs, boxes, oo, maps, hier_thresh, biases, 
-        classes=80, layer_w=13, layer_h=13):
+        classes=80, coords=4, layer_w=13, layer_h=13, num=5):
     """
     sets probs and boxes values based on features and other parameters
     """
     features = np.swapaxes(features, 1, 2)
     for row in xrange(layer_h):
         for col in xrange(layer_w):
-            for n in xrange(5): #n
-                object_index = entry_index(n, 4)
-                box_index = entry_index(n, 0)
+            for n in xrange(num): #n
+                object_index = entry_index(n, 4, coords, classes)
+                box_index = entry_index(n, 0, coords, classes)
                 scale = features[0, col, row, object_index]
-                get_region_box(features, biases, n, box_index, col, row, layer_w, layer_h, 
-                    layer_w*layer_h, boxes)
+                get_region_box(features, biases, n, box_index, col, row, layer_w, layer_h, boxes)
                 # sets boxes[col, row, box_index]
                 if 1:
                     m = w if w > h else h
@@ -308,54 +236,51 @@ def set_region_boxes(features, w, h, thresh, probs, boxes, oo, maps, hier_thresh
                     boxes[col, row, n]["y"] = (boxes[col, row, n]["y"] - (m-h)/2.0/m)/(float(h)/m)
                     boxes[col, row, n]["w"] *= float(m)/w  
                     boxes[col, row, n]["h"] *= float(m)/h
-                #    int max = w > h ? w : h;
-                #    boxes[index].x =  (boxes[index].x - (max - w)/2./max) / ((float)w/max); 
-                #    boxes[index].y =  (boxes[index].y - (max - h)/2./max) / ((float)h/max); 
-                #    boxes[index].w *= (float)max/w;
-                #    boxes[index].h *= (float)max/h;
+
                 boxes[col, row, n]["x"] *= w
                 boxes[col, row, n]["y"] *= h
                 boxes[col, row, n]["w"] *= w 
                 boxes[col, row, n]["h"] *= h
-                class_index = entry_index(n, 5) # + i
+                class_index = entry_index(n, 5, coords, classes)
                 m=0.0
                 for j in xrange(classes):
-                    class_index = entry_index(n, 5 + j) # + i
+                    class_index = entry_index(n, 5 + j, coords, classes) 
                     prob = scale*features[0, col, row, class_index]
                     probs[col, row, n, j] = prob if prob > thresh else 0.0
-                    if prob > m: m = prob
-                #for(j = 0; j < l.classes; ++j){
-                #    int class_index = entry_index(l, 0, n*l.w*l.h + i, 5 + j);
-                #    float prob = scale*predictions[class_index];
-                #    probs[index][j] = (prob > thresh) ? prob : 0;
-                #}
+                    if prob > m: 
+                        m = prob
+
                 probs[col, row, n, classes] = m
                 if oo:
                     probs[col, row, n, 0] = scale
     pass
-#after get_region_box:  
-#if(1){
-#    int max = w > h ? w : h;
-#    boxes[index].x =  (boxes[index].x - (max - w)/2./max) / ((float)w/max); 
-#    boxes[index].y =  (boxes[index].y - (max - h)/2./max) / ((float)h/max); 
-#    boxes[index].w *= (float)max/w;
-#    boxes[index].h *= (float)max/h;
-#}
-#boxes[index].x *= w;
-#boxes[index].y *= h;
-#boxes[index].w *= w;
-#boxes[index].h *= h;
+
+
 def read_names(filename):
     with open(filename) as f:
         for line in f:
             yield line.strip()
 
-def predict_image(model, img_path, n=5):
+
+def predict_image(model, layer_data, img_path):
     import PIL
-    #print(model.input_shape[1: -1])
     import numpy as np
-    (im_w, im_h) = model.input_shape[1:-1]
+    from darknet.network import do_nms_sort
     
+    net_parameters = layer_data[0][1]
+    output_parameters = layer_data[-1][1]
+    
+    classes = output_parameters.get("classes", 80)
+    n = output_parameters.get("num", 5)
+    coords = output_parameters.get("coords", 4)
+    anchors = output_parameters.get("anchors", None)
+    softmax = output_parameters.get("softmax", 0)
+    #thresh = output_parameters.get("thresh", 0.24)
+    thresh=0.24
+    
+    names = np.asarray(list(read_names("data/coco.names")))
+    
+    (im_w, im_h) = model.input_shape[1:-1]
     (w, h) = model.output_shape[1:-1]
     
     x = load_img(img_path, (im_w, im_h))
@@ -364,27 +289,27 @@ def predict_image(model, img_path, n=5):
     x = np.expand_dims(x, axis=0)
     #print(x[0,0,0,0], x[0,1,0,0],x[0,0,1,0], x[0,1,1,0], x.shape)
     features = model.predict(x)
-    features = prepare_data(features)
-    classes = 80
+    features = prepare_data(features, coords, 0, classes, n)
+    
     boxes = np.zeros((w, h, n,), dtype=boxtype)
-    probs = np.zeros((w, h, n, classes+1), dtype=np.float32)
+    probs = np.zeros((w, h, n, classes + 1), dtype=np.float32)
     biases = np.zeros((2*n,), dtype=np.float32)
     biases[:] = 0.5
-    names = np.asarray(list(read_names("data/coco.names")))
-    for i, x in enumerate([0.738768,0.874946,  2.42204,2.65704,  4.30971,7.04493,  10.246,4.59428,  12.6868,11.8741]):
-        biases[i] = x
-    thresh=0.24
+    if anchors is not None:
+        for i, x in enumerate(anchors):
+            biases[i] = x
+    
     hier_thresh=0.5
-    num=5
+
     print(features[0,0,0,0], features[0,1,0,0], features[0,0,1,0], features[0,0,0,1], features.shape)
     
     set_region_boxes(features, 1, 1, thresh, probs, boxes, 0, 0, hier_thresh, 
-            biases, layer_w=w, layer_h=h)
+            biases, classes=classes, coords=coords, layer_w=w, layer_h=h, num=n)
     nms=0.4
-    from darknet.network import do_nms_sort
+    
     if nms:
         do_nms_sort(boxes, probs, w*h*n, classes,  nms, w, h)
-    draw_detections(img, num, thresh, boxes, probs, names, None, classes, w=w, h=w, n=num)
+    draw_detections(img, thresh, boxes, probs, names, None, classes, w, h, n=n)
     img.save("predicted.jpg")
     print("images saved")
     
@@ -396,9 +321,9 @@ if __name__ == "__main__":
         exit(1)
     import keras.backend as K
     K.set_learning_phase(0)
-    model = check_weights_loading("../darknet/cfg/tiny_first.cfg", "data/tiny-yolo.weights")
+    (model, layer_data) = check_weights_loading("../darknet/cfg/tiny_first.cfg", "data/tiny-yolo.weights")
     import sys
     if len(sys.argv) < 2:
         exit(0)
-    predict_image(model, sys.argv[1])
+    predict_image(model, layer_data, sys.argv[1])
     #print(features[0,0,0])

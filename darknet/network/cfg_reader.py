@@ -169,7 +169,7 @@ def buildYoloModel(config_filename):
     inputs = Input(shape=(h, w, c))
     outputs = inputs
     print(net_params)
-    layer_names = [""]
+    layer_data = [("net", net_params)]
     for class_name, params in config_iterator:
         layer = layer_constructors.get(class_name, lambda x: None)(params)
         if layer:
@@ -178,7 +178,7 @@ def buildYoloModel(config_filename):
                 class_name, 
                 " x ".join(map(lambda x:"%4s"%x, layer.input_shape[1:])),
                 " x ".join(map(lambda x:"%4s"%x, layer.output_shape[1:]))))
-            layer_names.append(class_name)
+            layer_data.append((class_name, params))
         else:
             print(class_name, params)
         pass
@@ -186,7 +186,7 @@ def buildYoloModel(config_filename):
     model = Model(inputs=inputs, outputs=outputs)
     #model.compile(optimizer=SGD(lr=lr, momentum=momentum, decay=decay))
     # TODO: check what loss function and optimizer should be used here
-    return model, layer_names
+    return model, layer_data
 
 
 if __name__ == "__main__":
