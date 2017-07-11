@@ -4,6 +4,7 @@ Script runs distutils to rebuild sources and tries to read weights from darknet 
 
 This script should be run from the main project directory.
 """
+import argparse
 import numpy as np
 boxtype = np.dtype([('x', np.float32), ('y', np.float32), ('w', np.float32), ('h', np.float32)])
 
@@ -132,7 +133,7 @@ def read_names(filename):
             yield line.strip()
 
 
-def predict_image(model, layer_data, img_path):
+def predict_image(model, layer_data, img_path, class_names_file):
     import PIL
     import numpy as np
     from darknet.network import do_nms_sort
@@ -149,7 +150,7 @@ def predict_image(model, layer_data, img_path):
     #thresh = output_parameters.get("thresh", 0.24)
     thresh=0.24
     
-    names = np.asarray(list(read_names("data/coco.names")))
+    names = np.asarray(list(read_names(class_names_file)))
     
     (im_w, im_h) = model.input_shape[1:-1]
     (w, h) = model.output_shape[1:-1]
@@ -183,18 +184,35 @@ def predict_image(model, layer_data, img_path):
     draw_detections(img, thresh, boxes, probs, names, None, classes, w, h, n=n)
     img.save("predicted.jpg")
     print("images saved")
-    
-    
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='Keras-YOLO run script')
+    parser.add_argument('--cfg_file',
+        default="../darknet/cfg/tiny_first.cfg",
+        help='darknet .cfg file')
+    parser.add_argument('--weights_file',
+        default="data/tiny-yolo.weights",
+        help='darknet .weights file')
+    parser.add_argument('image_file',
+        help='image file to process')
+    parser.add_argument("--class_names_file",
+        default="data/coco.names",
+        help="file with list of class names - 1 at each line")
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
+    args = parse_args()
     resultcode = rebuild_source()
     if resultcode:
         print("Rebuild failed, exiting")
         exit(1)
     import keras.backend as K
     K.set_learning_phase(0)
-    (model, layer_data) = check_weights_loading("../darknet/cfg/tiny_first.cfg", "data/tiny-yolo.weights")
+    (model, layer_data) = check_weights_loading(args.cfg_file, args.weights_file)
     import sys
     if len(sys.argv) < 2:
         exit(0)
-    predict_image(model, layer_data, sys.argv[1])
+    predict_image(model, layer_data, args.image_file, args.class_names_file)
     #print(features[0,0,0])
