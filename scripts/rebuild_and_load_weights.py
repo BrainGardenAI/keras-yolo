@@ -161,7 +161,7 @@ def predict_image(model, layer_data, img_path, class_names_file):
     x = np.expand_dims(x, axis=0)
     #print(x[0,0,0,0], x[0,1,0,0],x[0,0,1,0], x[0,1,1,0], x.shape)
     features = model.predict(x)
-    features = prepare_data(features, coords, 0, classes, n)
+    #features = prepare_data(features, coords, 0, classes, n)
     
     boxes = np.zeros((w, h, n,), dtype=boxtype)
     probs = np.zeros((w, h, n, classes + 1), dtype=np.float32)

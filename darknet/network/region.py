@@ -7,6 +7,8 @@ from keras import backend as K
 from keras.engine.topology import Layer
 import numpy as np
 
+from keras.activations import softmax
+
 
 class Region(Layer):
     def __init__(self, coords=4, classes=20, num=1,
@@ -25,6 +27,7 @@ class Region(Layer):
         self.coords = coords
         self.classes = classes
         self.num = num
+        self.background = background
         print(coords, classes)
         self.c = (self.coords+self.classes+1)*num
         if anchors:
@@ -39,9 +42,41 @@ class Region(Layer):
         pass
     
     
+    def _entry_index(self, n, entry):
+        #simplified version - gets last coordinate in input tensor
+        return n*(self.coords + self.classes + 1) + entry
+        
+        
+    def _process_input(self, x):
+        """Apply logistic and softmax activations to input tensor
+        """
+        logistic_activate = lambda x: 1.0/(1.0 + K.exp(-x))
+        
+        (batch, w, h, channels) = x.get_shape()
+        x_temp = K.permute_dimensions(x, (3, 0, 1, 2))
+        x_t = []
+        for i in xrange(self.num):
+            k = self._entry_index(i, 0)
+            x_t.extend([
+                logistic_activate(K.gather(x_temp, (k, k + 1))), # 0
+                K.gather(x_temp, (k + 2, k + 3))])
+            if self.background:
+                x_t.append(K.gather(x_temp, (k + 4,)))
+            else:
+                x_t.append(logistic_activate(K.gather(x_temp, (k + 4,))))
+                
+            x_t.append(
+                softmax(
+                    K.gather(x_temp, tuple(xrange(k + 5, k + self.coords + self.classes + 1))),
+                    axis=0))
+        x_t = K.concatenate(x_t, axis=0)
+        return K.permute_dimensions(x_t, (1, 2, 3, 0))
+        
+        
     def call(self, x, training=None):
-        (w, h, channels) = x.get_shape()[1:]
-        return x
+        #(w, h, channels) = x.get_shape()[1:]
+        return self._process_input(x)
+        #return x
     
     def compute_output_shape(self, input_shape):
         return input_shape
