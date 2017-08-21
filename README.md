@@ -23,7 +23,11 @@ If you run
 ```
 python scripts/rebuild_and_load_weights.py ../darknet/dog.jpg
 ```
-it tries to load image from given path and to predict its class (this is in progress).
+it tries to load image from given path and to predict its class (this is in progress). 
+
+As a result of this command, file `predicted.jpg` will be generated and it will look similar to this:
+
+![Generated image with detections](https://latticetower.github.com/predicted.jpg)
 
 ## Requirements
 
