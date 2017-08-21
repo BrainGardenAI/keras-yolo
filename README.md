@@ -27,7 +27,7 @@ it tries to load image from given path and to predict its class (this is in prog
 
 As a result of this command, file `predicted.jpg` will be generated and it will look similar to this:
 
-![Generated image with detections](https://github.com/BrainsGarden/keras-yolo/predicted.jpg)
+![Generated image with detections](https://github.com/BrainsGarden/keras-yolo/blob/master/predicted.jpg)
 
 There still remains a pythonish problem with precision - that's why detection borders 
 at resulting image slightly differ from what you see when you run `darknet`.
