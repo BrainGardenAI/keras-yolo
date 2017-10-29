@@ -5,7 +5,7 @@ import numpy as np
 from keras.layers.advanced_activations import LeakyReLU
 from keras.layers.normalization import BatchNormalization
 
-from cfg_reader import get_activation
+from .cfg_reader import get_activation
 
 
 class Convolutional(Layer):

@@ -66,7 +66,7 @@ def read_config(filename):
 
 
 def get_convolutional(params):
-    from convolutional import Convolutional
+    from ..network.convolutional import Convolutional
     activation = get_activation(params.get('activation', 'linear'))
     batch_normalize = params.get('batch_normalize', 0) # TODO: add this param processing
     padding = "same" if params.get('pad', 0) else "valid"
@@ -96,12 +96,12 @@ def get_local(params):
         filters=params.get('filters', 1), 
         kernel_size=params.get('size', 1),
         strides=params.get('stride', 1),
-        padding=padding,
-        activation=activation)
+        padding=padding)#,
+        #activation=activation)
     
     
 def get_connected(params):
-    from connected import Connected
+    from .connected import Connected
     activation = get_activation(params.get('activation', "linear"))
     return Connected(**params)
     
@@ -110,7 +110,7 @@ def get_dropout(params):
     return Dropout(params.get('probability', 0.5))
 
 def get_detection(params):
-    from detection import Detection2D
+    from .detection import Detection2D
     coords = params.get("coords", 1)
     classes = params.get("classes", 1)
     rescore = params.get("rescore", 0)
@@ -140,7 +140,7 @@ def get_detection(params):
 
 
 def get_region(params):
-    from region import Region
+    from ..network.region import Region
     return Region(**params)
     
 layer_constructors = {
@@ -158,7 +158,7 @@ layer_constructors = {
 
 def buildYoloModel(config_filename):
     config_iterator = read_config(config_filename)
-    _, net_params = config_iterator.next()
+    _, net_params = next(config_iterator)
     h = net_params.get('height', 448)
     w = net_params.get('width', 448)
     c = net_params.get('channels', 3)
