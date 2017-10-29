@@ -26,12 +26,15 @@ class Detection2D(Layer):
 
     def build(self, input_shape):
         # add check to ensure input_shape size is the same as expected
-        ll = np.prod(filter(lambda x: x is not None, input_shape))
+        ll = np.prod(list(filter(lambda x: x is not None, input_shape)))
         # print(input_shape, self.side*self.side*((1 + self.coords)*self.n + self.classes))
         assert(self.side*self.side*((1 + self.coords)*self.n + self.classes) == ll)
         super(Detection2D, self).build(input_shape)
 
     def call(self, x, training=None):
+        #output_shape = self.compute_output_shape(x.shape)
+        #if x.shape[1:]!=output_shape[1:]:
+        #    return x.reshape((-1,)+ output_shape[1:]) 
         return x #K.dot(x, self.kernel)
 
     def compute_output_shape(self, input_shape):

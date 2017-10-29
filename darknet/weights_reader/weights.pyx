@@ -102,7 +102,8 @@ cdef void read_local_weights(FILE * fp, l):
   
   
 cpdef void read_file(filename, model, layer_data):
-    cdef FILE* ptr = fopen(filename, "rb")
+    print(filename)
+    cdef FILE* ptr = fopen(filename.encode(), "rb")
     read_header(ptr)
     for (layer_type, layer_params), layer in zip(layer_data, model.layers):
           #print(layer_type)
@@ -120,6 +121,7 @@ cpdef void read_file(filename, model, layer_data):
               #read_local_weights(ptr, layer)
               #return
               pass
+    print(layer.get_weights())
     pos = ftell(ptr)
     fseek(ptr, 0, SEEK_END)
     assert(ftell(ptr) == pos, "File wasn't processed completely")

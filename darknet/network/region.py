@@ -6,7 +6,7 @@ This module contains this layer implemented.
 from keras import backend as K
 from keras.engine.topology import Layer
 import numpy as np
-
+#from builtins import range
 from keras.activations import softmax
 
 
@@ -55,7 +55,7 @@ class Region(Layer):
         (batch, w, h, channels) = x.get_shape()
         x_temp = K.permute_dimensions(x, (3, 0, 1, 2))
         x_t = []
-        for i in xrange(self.num):
+        for i in range(self.num):
             k = self._entry_index(i, 0)
             x_t.extend([
                 logistic_activate(K.gather(x_temp, (k, k + 1))), # 0
@@ -67,7 +67,7 @@ class Region(Layer):
                 
             x_t.append(
                 softmax(
-                    K.gather(x_temp, tuple(xrange(k + 5, k + self.coords + self.classes + 1))),
+                    K.gather(x_temp, tuple(range(k + 5, k + self.coords + self.classes + 1))),
                     axis=0))
         x_t = K.concatenate(x_t, axis=0)
         return K.permute_dimensions(x_t, (1, 2, 3, 0))

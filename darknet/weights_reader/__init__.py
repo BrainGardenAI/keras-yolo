@@ -1,1 +1,1 @@
-from weights import read_file
+from .weights import read_file

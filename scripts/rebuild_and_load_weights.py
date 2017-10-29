@@ -4,8 +4,12 @@ Script runs distutils to rebuild sources and tries to read weights from darknet 
 
 This script should be run from the main project directory.
 """
-import argparse
+import argparse, sys
 import numpy as np
+#from builtins import range
+import keras.backend as K
+
+
 boxtype = np.dtype([('x', np.float32), ('y', np.float32), ('w', np.float32), ('h', np.float32)])
 
 def rebuild_source():
@@ -54,8 +58,8 @@ def prepare_data(data, coords, background, classes, n):
     import numpy as np
     logistic_activate = lambda x: 1.0/(1.0 + np.exp(-x))
     (batches, w, h, channels) = data.shape
-    for b in xrange(batches):
-        for i in xrange(n):
+    for b in range(batches):
+        for i in range(n):
             index = entry_index(i, 0, coords, classes)
             data[b, :, :, index] = logistic_activate(data[b, :, :, index])
             index = entry_index(i, 1, coords, classes)
@@ -65,14 +69,14 @@ def prepare_data(data, coords, background, classes, n):
                 data[b, :, :, index] = logistic_activate(data[b, :, :, index])
     
     # here goes softmax_cpu
-    #for b in xrange(batches*n):
-    #    for g in xrange(w*h):
+    #for b in range(batches*n):
+    #    for g in range(w*h):
     #        #softmax(input + b*(inputs/n)+ g*1, classes, 1, w*h)
-    for b in xrange(batches):
+    for b in range(batches):
         index = entry_index(0, 5, coords, classes)
-        for k in xrange(n):
-            for i in xrange(w):
-                for j in xrange(h):
+        for k in range(n):
+            for i in range(w):
+                for j in range(h):
                     data[b, i, j, index: index+classes] = softmax(data[b, i, j, index: index+classes])
             index += channels/n
     #int index = entry_index(l, 0, 0, l.coords + !l.background);
@@ -93,9 +97,9 @@ def set_region_boxes(features, w, h, thresh, probs, boxes, oo, maps, hier_thresh
     sets probs and boxes values based on features and other parameters
     """
     features = np.swapaxes(features, 1, 2)
-    for row in xrange(layer_h):
-        for col in xrange(layer_w):
-            for n in xrange(num): #n
+    for row in range(layer_h):
+        for col in range(layer_w):
+            for n in range(num): #n
                 object_index = entry_index(n, 4, coords, classes)
                 box_index = entry_index(n, 0, coords, classes)
                 scale = features[0, col, row, object_index]
@@ -114,7 +118,7 @@ def set_region_boxes(features, w, h, thresh, probs, boxes, oo, maps, hier_thresh
                 boxes[col, row, n]["h"] *= h
                 class_index = entry_index(n, 5, coords, classes)
                 m=0.0
-                for j in xrange(classes):
+                for j in range(classes):
                     class_index = entry_index(n, 5 + j, coords, classes) 
                     prob = scale*features[0, col, row, class_index]
                     probs[col, row, n, j] = prob if prob > thresh else 0.0
@@ -162,7 +166,8 @@ def predict_image(model, layer_data, img_path, class_names_file):
     #print(x[0,0,0,0], x[0,1,0,0],x[0,0,1,0], x[0,1,1,0], x.shape)
     features = model.predict(x)
     #features = prepare_data(features, coords, 0, classes, n)
-    
+    #features = features.reshape((-1, w, h, n*(classes+coords+1)))
+    print(features.shape)
     boxes = np.zeros((w, h, n,), dtype=boxtype)
     probs = np.zeros((w, h, n, classes + 1), dtype=np.float32)
     biases = np.zeros((2*n,), dtype=np.float32)
@@ -172,6 +177,8 @@ def predict_image(model, layer_data, img_path, class_names_file):
             biases[i] = x
     
     hier_thresh=0.5
+    print(features.shape)
+    #features = features.reshape((-1, 7,7,30))
 
     print(features[0,0,0,0], features[0,1,0,0], features[0,0,1,0], features[0,0,0,1], features.shape)
     
@@ -208,10 +215,8 @@ if __name__ == "__main__":
     if resultcode:
         print("Rebuild failed, exiting")
         exit(1)
-    import keras.backend as K
     K.set_learning_phase(0)
     (model, layer_data) = check_weights_loading(args.cfg_file, args.weights_file)
-    import sys
     if len(sys.argv) < 2:
         exit(0)
     predict_image(model, layer_data, args.image_file, args.class_names_file)

@@ -4,7 +4,7 @@ import keras.backend as K
 from keras.engine import InputSpec
 import numpy as np
 
-from cfg_reader import get_activation
+from .cfg_reader import get_activation
 
 
 class Connected(Layer):

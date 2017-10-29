@@ -1,4 +1,6 @@
 import numpy as np
+#from builtins import range
+
 boxtype = np.dtype([('x', np.float32), ('y', np.float32), ('w', np.float32), ('h', np.float32)])
 
 
@@ -8,7 +10,7 @@ def max_index(a, n): # float* and int
     i = 0
     max_i = 0
     max_v = a[0]
-    for i in xrange(1, n):
+    for i in range(1, n):
         if a[i] > max_v:
             max_v = a[i]
             max_i = i
@@ -26,14 +28,14 @@ def resize_image(data, size):
     scale_w = 1.0*(w - 1)/(target_w - 1)
     scale_h = 1.0*(h - 1)/(target_h - 1)
     part = np.zeros((target_w, h, 3))
-    for c in xrange(channels):
-        arr = np.asarray([[ min(i*scale_w, w - 1) for i in xrange(target_w)]])
-        for j in xrange(h):
+    for c in range(channels):
+        arr = np.asarray([[ min(i*scale_w, w - 1) for i in range(target_w)]])
+        for j in range(h):
             part[:, j, c] = scipy.ndimage.map_coordinates(data[:, j, c], arr, order=1)
     resized = np.zeros((target_w, target_h, channels))
-    for c in xrange(channels):
-        arr = np.asarray([[min(j*scale_h, h - 1) for j in xrange(target_h)]])
-        for i in xrange(target_w):
+    for c in range(channels):
+        arr = np.asarray([[min(j*scale_h, h - 1) for j in range(target_h)]])
+        for i in range(target_w):
             resized[i, :, c] = scipy.ndimage.map_coordinates(part[i, :, c], arr, order=1)
     return resized
     
@@ -51,13 +53,13 @@ def letterbox_image(img_data, size):
     (w, h, c) = img_data.shape
     if 1.0*target_w/w < 1.0*target_h/h:
         new_w = target_w
-        new_h = (h*target_w)/w
+        new_h = (h*target_w)//w
     else:
         new_h = target_h
-        new_w = (w*target_h)/h
+        new_w = (w*target_h)//h
     resized = resize_image(img_data, (new_w, new_h))
     assert resized.shape == (new_w, new_h, c)
-    x0, y0 = (target_w - new_w)/2, (target_h - new_h)/2 # upper left corner of resized image
+    x0, y0 = (target_w - new_w)//2, (target_h - new_h)//2 # upper left corner of resized image
     resized = np.pad(
         resized, 
         [
@@ -96,15 +98,16 @@ def draw_box_width(img, left, top, right, bottom, r, g, b):
 def draw_label(img, left, top, right, bottom, r, g, b, label):
     from PIL import ImageDraw
     draw = ImageDraw.Draw(img)
-    (w, h) = draw.textsize(label)
+    print(repr(label))
+    (w, h) = draw.textsize(label.encode())
     draw.rectangle([left, top-h, left+w, top], fill=(r,g,b))
-    draw.text((left, max(top-h, 0)), label, fill=(255,255,255))
+    draw.text((left, max(top-h, 0)), label.encode(), fill=(255,255,255))
 
 
 def draw_detections(img, thresh, boxes, probs, names, alphabet, classes, w=13, h=13, n=5):
-    for k in xrange(n):
-        for j in xrange(h):
-            for i in xrange(w):
+    for k in range(n):
+        for j in range(h):
+            for i in range(w):
                 class0 = max_index(probs[i, j, k, :], classes)
                 prob = probs[i, j, k, class0]
                 if prob <= thresh:
@@ -115,17 +118,17 @@ def draw_detections(img, thresh, boxes, probs, names, alphabet, classes, w=13, h
                 print("%s: %5i%%" % (names[class0], int(prob*100)))
                 offset = class0*123457 % classes
                 color = ((256*(class0+1)/(classes+1))+ (class0+1)/(classes+1))*256+(class0+1)/(classes+1)+offset
-                red = color/256/256
-                blue = color %256
-                green = (color/256)%256
+                red = int(color/256/256)
+                blue = int(color %256)
+                green = int((color/256)%256)
                 #red = get_color(2,offset,classes);
                 #green = get_color(1,offset,classes);
                 #blue = get_color(0,offset,classes);
                 b = boxes[i, j, k]
-                left = (b["x"] - b["w"]/2.0)*img.width
-                right = (b["x"] + b["w"]/2.0)*img.width
-                top = (b["y"] - b["h"]/2.0)*img.height
-                bottom = (b["y"] + b["h"]/2.0)*img.height
+                left = int((b["x"] - b["w"]/2.0)*img.width)
+                right = int((b["x"] + b["w"]/2.0)*img.width)
+                top = int((b["y"] - b["h"]/2)*img.height)
+                bottom = int((b["y"] + b["h"]/2.0)*img.height)
                 left = max(left, 0)
                 right = min(right, img.width - 1)
                 top = max(top, 0)
